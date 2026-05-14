@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-
+// retired file, tb archived
 export function createBuildEmbed({ buildId, buildName, preShrineTalents = [] }) {
     const embed = new EmbedBuilder()
         .setTitle(buildName)

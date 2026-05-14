@@ -26,6 +26,7 @@ export async function sendPaginatedBuild(message, pages) {
     let current = 0;
 
     const msg = await message.reply({
+        content: '-# this interaction below (pages) will time out in a certain amount of time and scrolling through pages will be unavailable',
         files: [new AttachmentBuilder(pages[current], { name: 'build.png' })],
         components: [buildRow(current, pages.length)],
     });
