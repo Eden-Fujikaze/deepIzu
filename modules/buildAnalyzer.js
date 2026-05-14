@@ -1,24 +1,26 @@
 import { fetchBuild } from './api.js';
 import { mergeStatCategories } from './stats.js';
-import { renderBuildImage } from './imageRenderer.js';
 import { AttachmentBuilder } from 'discord.js';
 import { talentMap } from './talentMap.js';
+import { renderPages } from './imageRenderer.js';
+import { sendPaginatedBuild } from './paginator.js';
 
 export async function analyzeBuild(buildId, message) {
-    console.log("Working on bID: ", buildId);
-
     const build = await fetchBuild(buildId);
     if (!build) return message.reply('Build not found.');
 
     const preStats = mergeStatCategories(build.preShrine);
     const postStats = mergeStatCategories(build.postShrine);
 
-    const preShrineTalents = filterPreShrineTalents(build.talents, preStats, postStats);
-    const levelingOrder = computeLevelingOrder(preShrineTalents);
+    const [preShrineTalents, postShrineTalents] = filterTalents(build.talents, preStats, postStats);
 
-    const image = renderBuildImage({ buildName: build.name, preShrineTalents: levelingOrder });
-    const attachment = new AttachmentBuilder(image, { name: 'build.png' });
-    return message.reply({ files: [attachment] });
+    const pages = renderPages({
+        buildName: build.name,
+        preShrineTalents: computeLevelingOrder(preShrineTalents),
+        postShrineTalents,
+    });
+
+    await sendPaginatedBuild(message, pages);
 }
 
 function computeLevelingOrder(talents) {
@@ -29,19 +31,23 @@ function computeLevelingOrder(talents) {
     });
 }
 
-function filterPreShrineTalents(talents, preStats, postStats) {
-    const result = [];
+function filterTalents(talents, preStats, postStats) {
+    const preShrineResult = [];
+    const postShrineResult = [];
     const seen = new Set();
 
     for (const talent of talents) {
         const talentObj = talentMap[talent];
         if (!talentObj) continue;
+        if (isPreShrineTalent(talentObj, preStats, postStats)) {
+            collectTalentTree(talent, preShrineResult, seen);
+        } else {
+            collectTalentTree(talent, postShrineResult, seen);
 
-        if (!isPreShrineTalent(talentObj, preStats, postStats)) continue;
-        collectTalentTree(talent, result, seen);
+        }
     }
 
-    return result;
+    return [preShrineResult, postShrineResult];
 }
 
 function isPreShrineTalent(talentObj, preStats, postStats) {
