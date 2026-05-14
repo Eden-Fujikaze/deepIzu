@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import { readFileSync, stat } from 'fs';
 import { updateList } from './talentListUpdater.js';
 await updateList();
@@ -18,7 +18,6 @@ const client = new Client({
 
 client.once('clientReady', async (message) => {
     console.log(`Logged in as ${client.user.tag}`);
-    validateBuild('g0cjQg4e', message);
 });
 
 client.on('messageCreate', async (message) => {
@@ -44,20 +43,27 @@ async function validateBuild(buildId, message) {
     );
 
     const practicalPreShrine = buildPracticalStats(preShrineTalents);
-    console.log(practicalPreShrine);
-    console.log(preShrineTalents);
+    return message.reply({
+        embeds: [
+            buildReportEmbed({
+                buildId,
+                buildName: build.name,
+                preShrineTalents,
+                stats: practicalPreShrine
+            })
+        ]
+    });
 }
 
 function buildPracticalStats(talentCollection) {
     const result = {};
-
-    for (const data of Object.values(talentCollection)) {
-        const stats = data?.[1];
+    for (const talent of talentCollection) {
+        const stats = talent.reqs;
         if (!stats) continue;
 
-        for (const [statName, value] of Object.entries(stats)) {
-            if (result[statName] === undefined || value > result[statName]) {
-                result[statName] = value;
+        for (const [stat, value] of Object.entries(stats)) {
+            if (!result[stat] || value > result[stat]) {
+                result[stat] = value;
             }
         }
     }
@@ -107,7 +113,10 @@ function addTalentWithPrereqs(talentName, resultSet) {
     const talentObj = talentMap[talentName];
     if (!talentObj) return;
 
-    resultSet.add([talentName, talentObj.requirements.stats]);
+    resultSet.add({
+        name: talentName,
+        reqs: talentObj.requirements.stats
+    });
 
     const prereqs = talentObj.requirements?.talents;
     if (!Array.isArray(prereqs) || prereqs.length === 0) return;
@@ -152,4 +161,43 @@ async function fetchBuild(buildId) {
     };
 }
 
+function buildReportEmbed({
+    buildId,
+    buildName,
+    preShrineTalents = [],
+    stats = {}
+}) {
+
+    const embed = new EmbedBuilder()
+        .setTitle(`${buildName}`)
+        .setColor(0xff3300)
+        .setFooter({
+            text: `Build ID: ${buildId}`,
+        })
+    const statFields = Object.entries(stats).map(([k, v]) => ({
+        name: k.toUpperCase(),
+        value: String(v),
+        inline: true
+    }));
+    const talentText = preShrineTalents.length
+        ? preShrineTalents.map(t =>
+            `**${t.name}** at ${Object.entries(t.reqs)
+                .map(([k, v]) => `${k} **${v}**`)
+                .join(', ')}`
+        ).join('\n')
+        : 'None found';
+
+    embed.addFields(
+        ...statFields,
+        {
+            name: '',
+            value: talentText,
+            inline: false
+        }
+    );
+
+    return embed;
+}
+
 client.login(process.env.TOKEN);
+
