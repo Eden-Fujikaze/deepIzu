@@ -13,7 +13,7 @@ const client = new Client({
 });
 
 client.once('clientReady', async (message) => {
-    console.log(`Logged in as ${client.user.tag}`);
+    console.log(`Logged in as ${client.user.tag}`)
 });
 
 client.on('messageCreate', async (message) => {

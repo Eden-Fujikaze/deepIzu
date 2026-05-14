@@ -1,5 +1,5 @@
 import { fetchBuild } from './api.js';
-import { mergeStatCategories } from './stats.js';
+import { mergeStatCategories, calcShrine } from './stats.js';
 import { AttachmentBuilder } from 'discord.js';
 import { talentMap } from './talentMap.js';
 import { renderPages } from './imageRenderer.js';
@@ -19,7 +19,7 @@ export async function analyzeBuild(buildId, message) {
         preShrineTalents: computeLevelingOrder(preShrineTalents),
         postShrineTalents,
     });
-
+    calcShrine(preStats);
     await sendPaginatedBuild(message, pages);
 }
 
