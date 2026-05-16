@@ -24,11 +24,30 @@ export async function analyzeBuild(buildId, message) {
 }
 
 function computeLevelingOrder(talents) {
-    return [...talents].sort((a, b) => {
-        const maxA = Math.max(...Object.values(a.reqs));
-        const maxB = Math.max(...Object.values(b.reqs));
+    const nameSet = new Set(talents.map(t => t.name));
+    const talentByName = Object.fromEntries(talents.map(t => [t.name, t]));
+
+    const visited = new Set();
+    const result = [];
+
+    function visit(name) {
+        if (visited.has(name)) return;
+        visited.add(name);
+        const talentObj = talentMap[name];
+        for (const prereq of talentObj?.requirements?.talents ?? []) {
+            if (nameSet.has(prereq)) visit(prereq);
+        }
+        result.push(talentByName[name]);
+    }
+
+    const sorted = [...talents].sort((a, b) => {
+        const maxA = Object.values(a.reqs).length ? Math.max(...Object.values(a.reqs)) : 0;
+        const maxB = Object.values(b.reqs).length ? Math.max(...Object.values(b.reqs)) : 0;
         return maxA - maxB;
     });
+
+    for (const t of sorted) visit(t.name);
+    return result;
 }
 
 function filterTalents(talents, preStats, postStats) {
