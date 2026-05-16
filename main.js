@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, Partials } from 'discord.js';
 import { readFileSync } from 'fs';
 import { updateList } from './modules/talentListUpdater.js';
 import { analyzeBuild } from './modules/buildAnalyzer.js';
@@ -9,6 +9,10 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages
+    ],
+    partials: [
+        Partials.Channel,
     ],
 });
 
