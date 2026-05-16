@@ -18,6 +18,7 @@ const client = new Client({
 
 client.once('clientReady', async (message) => {
     console.log(`Logged in as ${client.user.tag}`)
+    updateList();
 });
 
 client.on('messageCreate', async (message) => {
